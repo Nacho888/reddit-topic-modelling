@@ -2,6 +2,7 @@ import logging
 import logging_factory
 import sys
 from preprocessing import preprocess_inputs
+from topics import extract_topics
 
 
 logger_err = logging_factory.get_module_logger("main_err", logging.ERROR)
@@ -11,6 +12,7 @@ logger = logging_factory.get_module_logger("main", logging.DEBUG)
 def main(argv):
     subreddit_control = argv[0]
     preprocess_inputs(subreddit_control)
+    extract_topics()
 
 
 if __name__ == "__main__":

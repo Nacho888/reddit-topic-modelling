@@ -90,7 +90,7 @@ def preprocess_inputs(subreddit_control: str, only_text: bool = True):
     full_no_control_df = None
     control_df = None
 
-    for file in glob.glob(".\data\*.jsonl"):
+    for file in glob.glob("./data/*.jsonl"):
         df = pd.DataFrame(pd.read_json(file, lines=True))
 
         logger.debug(f"Input: '{file}' with {df.shape[0]} posts")
