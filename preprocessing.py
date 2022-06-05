@@ -1,3 +1,5 @@
+import logging
+import logging_factory
 import datetime
 import cleantext
 import re
@@ -9,6 +11,10 @@ from nltk import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from pandas import DataFrame
+
+
+logger_err = logging_factory.get_module_logger("preprocessing_err", logging.ERROR)
+logger = logging_factory.get_module_logger("preprocessing", logging.DEBUG)
 
 
 pst = PorterStemmer()
@@ -87,13 +93,13 @@ def preprocess_inputs(subreddit_control: str, only_text: bool = True):
     for file in glob.glob(".\data\*.jsonl"):
         df = pd.DataFrame(pd.read_json(file, lines=True))
 
-        print(f"Input: {file} with {df.shape[0]} posts")
+        logger.debug(f"Input: '{file}' with {df.shape[0]} posts")
 
         df = clean_data_frame(df, only_text)
 
         df["text"] = df["text"].swifter.apply(lambda x: pre_process(x, False))
 
-        print(f"After preprocessing: {file} with {df.shape[0]} posts\n")
+        logger.debug(f"After preprocessing: {df.shape[0]} posts\n")
 
         if subreddit_control in file:
             control_df = df
@@ -108,10 +114,8 @@ def preprocess_inputs(subreddit_control: str, only_text: bool = True):
         elif subreddit_control not in file:
             full_no_control_df = full_no_control_df.append(df, ignore_index=True)
 
-    print(f"SIZES - All posts: {full_df.shape[0]}, control ({subreddit_control}): {control_df.shape[0]}, all posts no control: {full_no_control_df.shape[0]}")
+    logger.debug(f"SIZES - All posts: {full_df.shape[0]}, control ({subreddit_control}): {control_df.shape[0]}, all posts no control: {full_no_control_df.shape[0]}")
 
     full_df.to_csv("./data/all_subreddits.txt", header=None, index=None, sep="\n", mode="w")
     full_no_control_df.to_csv("./data/all_subreddits_no_control.txt", header=None, index=None, sep="\n", mode="w")
     control_df.to_csv("./data/control.txt", header=None, index=None, sep="\n", mode="w")
-
-preprocess_inputs("ImmigrationCanada")
