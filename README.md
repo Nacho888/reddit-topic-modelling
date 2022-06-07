@@ -9,6 +9,8 @@ Given JSON files extracted from Reddit's API (submissions), preprocess the text 
 This repository uses **Anaconda** to manage all dependencies:
 
 * If not installed go to and select your version: https://www.anaconda.com/products/distribution
+  * Make sure *\<anaconda install path>/* and *\<anaconda install path>/Scripts* are added to your environment variables
+  * If there are SSL issues refer to: https://stackoverflow.com/questions/50125472/issues-with-installing-python-libraries-on-windows-condahttperror-http-000-co (top answer) 
 * For a simple use guide refer to: https://docs.conda.io/projects/conda/en/4.6.0/_downloads/52a95608c49671267e40c689e0bc00ca/conda-cheatsheet.pdf
 
 To create the environment with all the required dependencies execute:
