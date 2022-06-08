@@ -169,10 +169,12 @@ def compute_gensim():
             # Build topic model
             start_time = time.time()
 
-            if "tfidf" in word_model_name:
+            if "tfidf" in word_model_name: # LSI only with TFIDF
                 logger.debug(f"Computing LSI model for '{word_model_name}'")
                 model = gensim.models.lsimodel.LsiModel(corpus=word_models[i][0], id2word=word_models[i][2], num_topics=10)
-            else:
+                logger.debug(f"Elapsed time building the model ({word_model_name}): {time.time() - start_time} seconds")
+                coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_lsi'}", i, coherence_for_file)
+            else: # LDA and HDP with Bag of Words
                 logger.debug(f"Computing LDA model for '{word_model_name}'")
                 model = gensim.models.ldamodel.LdaModel(corpus=word_models[i][0],
                                                     id2word=word_models[i][2],
@@ -183,9 +185,14 @@ def compute_gensim():
                                                     passes=5,
                                                     alpha="auto",
                                                     per_word_topics=True)
-            logger.debug(f"Elapsed time building the model ({word_model_name}): {time.time() - start_time} seconds")
+            logger.debug(f"Elapsed time building the model ({word_model_name + '_lda'}): {time.time() - start_time} seconds")
+            coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_lda'}", i, coherence_for_file)
 
-            coherence_for_file = get_gensim_model_stats(model, word_models, word_model_name, i, coherence_for_file)
+            logger.debug(f"Computing HDP model for '{word_model_name}'")
+            model = gensim.models.hdpmodel.HdpModel(corpus=word_models[i][0], id2word=word_models[i][2])
+            model = model.suggested_lda_model()
+            logger.debug(f"Elapsed time building the model ({word_model_name + '_hdp'}): {time.time() - start_time} seconds")
+            coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_hdp'}", i, coherence_for_file)
 
         coherences.append(coherence_for_file)
 
@@ -197,21 +204,21 @@ def get_gensim_model_stats(model, word_models, word_model_name, file, i, coheren
     logger.debug(model.show_topics(num_topics=10, num_words=10, log=False, formatted=True))
 
     # Compute Perplexity
-    if "tfidf" not in word_model_name:
+    if "lsi" not in word_model_name:
         logger.debug(f"Perplexity ({word_model_name}): {model.log_perplexity(word_models[i][0])}")
 
     # Compute Coherence Score
     coherence_model = CoherenceModel(model=model, corpus=word_models[i][0], dictionary=word_models[i][2], coherence="u_mass")
     coherence = coherence_model.get_coherence()
     coherence_str = f"Coherence Score ({word_model_name}): {coherence}"
-    if "tfidf" not in word_model_name:
+    if "lsi" not in word_model_name:
         coherence_str += "\n"
     logger.debug(coherence_str)
 
     coherence_for_file[word_model_name] = coherence
 
     # Output to HTML
-    if "tfidf" not in word_model_name:
+    if "lsi" not in word_model_name:
         vis = pyLDAvis.gensim_models.prepare(model, word_models[i][0], word_models[i][2])
         filename = file.split('.')[1].replace("/", "_").replace("\\", "_")
         pyLDAvis.save_html(vis, f"./output/lda{filename}_{word_model_name}_gensim.html")
