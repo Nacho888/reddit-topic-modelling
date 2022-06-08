@@ -25,7 +25,14 @@ def main(argv):
                 logger_err.error("Arguments expected as: \n\t-pre <subreddit_control: string> <use spacy: True/False> <stem: True/False>")
         preprocess_inputs(subreddit_control)
     elif option == "-top":
-        extract_topics()
+        preprocessed_as = argv[1]
+        if preprocessed_as is None or preprocessed_as == "":
+            logger_err.error("Arguments expected as: \n\t-top <type of preprocessing: string (base | base_stem | spacy | spacy_stem)>")
+        else:
+            try:
+                extract_topics(preprocessed_as)
+            except Exception:
+                logger_err.error("Arguments expected as: \n\t-top <type of preprocessing: string (base | base_stem | spacy | spacy_stem)>")
     else:
         logger_err.error("No options provided in the arguments: \n\t* '-pre' (to generate .txt files given submission .jsonl files) \n\t* '-top' (to generate the .html files with all the topics given the .txt files)")
 

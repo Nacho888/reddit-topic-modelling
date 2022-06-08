@@ -124,9 +124,12 @@ def preprocess_inputs(subreddit_control: str, only_text: bool = True, spacy: boo
 
     logger.debug(f"SIZES - All posts: {full_df.shape[0]}, control ({subreddit_control}): {control_df.shape[0]}, all posts no control: {full_no_control_df.shape[0]}")
 
-    full_df.to_csv("./data/all_subreddits.txt", header=None, index=None, sep="\n", mode="w")
-    full_no_control_df.to_csv("./data/all_subreddits_no_control.txt", header=None, index=None, sep="\n", mode="w")
-    control_df.to_csv("./data/control.txt", header=None, index=None, sep="\n", mode="w")
+    path = "spacy" if spacy else "base"
+    path += "_stem/" if stem else "/"
+
+    full_df.to_csv(f"./data/{path}all_subreddits.txt", header=None, index=None, sep="\n", mode="w")
+    full_no_control_df.to_csv(f"./data/{path}all_subreddits_no_control.txt", header=None, index=None, sep="\n", mode="w")
+    control_df.to_csv(f"./data/{path}control.txt", header=None, index=None, sep="\n", mode="w")
 
 
 preprocess_inputs("ImmigrationCanada", True, True, True)
