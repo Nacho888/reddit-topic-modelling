@@ -218,6 +218,7 @@ def print_coherences(coherences):
         plt.xlabel("Model name")
         plt.ylabel("Model coherence score (u_mass)")
         plt.savefig(f"./output/coherence_bar_{filenames[i]}.png")
+        plt.clf()
 
 
 def extract_topics(params):
