@@ -180,7 +180,7 @@ def compute_gensim():
             logger.debug(f"Elapsed time building the model ({model_name}): {time.time() - start_time} seconds")
 
             # Simple representation
-            model.show_topics(num_topics=10, num_words=10, log=False, formatted=True)
+            logger.debug(model.show_topics(num_topics=10, num_words=10, log=False, formatted=True))
 
             # Compute Perplexity
             if "tfidf" not in model_name:
@@ -189,7 +189,10 @@ def compute_gensim():
             # Compute Coherence Score
             coherence_model = CoherenceModel(model=model, corpus=word_models[i][0], dictionary=word_models[i][2], coherence="u_mass")
             coherence = coherence_model.get_coherence()
-            logger.debug(f"Coherence Score ({model_name}): {coherence}")
+            coherence_str = f"Coherence Score ({model_name}): {coherence}"
+            if "tfidf" not in model_name:
+                coherence_str += "\n"
+            logger.debug(coherence_str)
 
             coherence_for_file[model_name] = coherence
 
@@ -225,3 +228,4 @@ def extract_topics(params):
 
 
 compute_gensim()
+# compute_lda_scikit()
