@@ -93,25 +93,25 @@ def compute_gensim(preprocessed_as):
                 model = gensim.models.lsimodel.LsiModel(corpus=word_models[i][0], id2word=word_models[i][2], num_topics=10)
                 logger.debug(f"Elapsed time building the model ({word_model_name}): {time.time() - start_time} seconds")
                 coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_lsi'}", file, i, coherence_for_file, preprocessed_as)
-            # else: # LDA and HDP with Bag of Words
-            #     logger.debug(f"Computing LDA model for '{word_model_name}'")
-            #     model = gensim.models.ldamodel.LdaModel(corpus=word_models[i][0],
-            #                                         id2word=word_models[i][2],
-            #                                         num_topics=10,
-            #                                         random_state=100,
-            #                                         update_every=1,
-            #                                         chunksize=5000,
-            #                                         passes=5,
-            #                                         alpha="auto",
-            #                                         per_word_topics=True)
-            #     logger.debug(f"Elapsed time building the model ({word_model_name + '_lda'}): {time.time() - start_time} seconds")
-            #     coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_lda'}", file, i, coherence_for_file, preprocessed_as)
+            else: # LDA and HDP with Bag of Words
+                logger.debug(f"Computing LDA model for '{word_model_name}'")
+                model = gensim.models.ldamodel.LdaModel(corpus=word_models[i][0],
+                                                    id2word=word_models[i][2],
+                                                    num_topics=10,
+                                                    random_state=100,
+                                                    update_every=1,
+                                                    chunksize=5000,
+                                                    passes=5,
+                                                    alpha="auto",
+                                                    per_word_topics=True)
+                logger.debug(f"Elapsed time building the model ({word_model_name + '_lda'}): {time.time() - start_time} seconds")
+                coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_lda'}", file, i, coherence_for_file, preprocessed_as)
 
-            #     logger.debug(f"Computing HDP model for '{word_model_name}'")
-            #     model = gensim.models.hdpmodel.HdpModel(corpus=word_models[i][0], id2word=word_models[i][2])
-            #     model = model.suggested_lda_model()
-            #     logger.debug(f"Elapsed time building the model ({word_model_name + '_hdp'}): {time.time() - start_time} seconds")
-            #     coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_hdp'}", file, i, coherence_for_file, preprocessed_as)
+                logger.debug(f"Computing HDP model for '{word_model_name}'")
+                model = gensim.models.hdpmodel.HdpModel(corpus=word_models[i][0], id2word=word_models[i][2])
+                model = model.suggested_lda_model()
+                logger.debug(f"Elapsed time building the model ({word_model_name + '_hdp'}): {time.time() - start_time} seconds")
+                coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_hdp'}", file, i, coherence_for_file, preprocessed_as)
 
         coherences.append(coherence_for_file)
 
