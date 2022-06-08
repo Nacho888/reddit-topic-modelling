@@ -8,6 +8,7 @@ import pyLDAvis
 import pyLDAvis.gensim_models
 import pyLDAvis.sklearn
 import gensim.corpora as corpora
+import matplotlib.pyplot as plt
 from gensim import models
 from gensim.models.coherencemodel import CoherenceModel
 from gensim.models import Phrases
@@ -99,9 +100,13 @@ def compute_lda_scikit():
             logger.debug(f"HTML out generated ({model_name})\n")
 
 
-def compute_lda_gensim():
+def compute_gensim():
+    coherences = []
+
     for file in glob.glob("./data/*.txt"):
         logger.debug(f"(gensim) Processing file: '{file}'")
+
+        coherence_for_file = {}
 
         # Load data from .txt file
         data = []
@@ -154,11 +159,16 @@ def compute_lda_gensim():
         for i in range(len(word_models)):
             # Get the name of the model
             model_name = word_models[i][1]
-            logger.debug(f"Computing LDA model for '{model_name}'")
 
             # Build LDA model
             start_time = time.time()
-            lda_model = gensim.models.ldamodel.LdaModel(corpus=word_models[i][0],
+
+            if "tfidf" in model_name:
+                logger.debug(f"Computing LSI model for '{model_name}'")
+                model = gensim.models.lsimodel.LsiModel(corpus=word_models[i][0], id2word=word_models[i][2], num_topics=10)
+            else:
+                logger.debug(f"Computing LDA model for '{model_name}'")
+                model = gensim.models.ldamodel.LdaModel(corpus=word_models[i][0],
                                                     id2word=word_models[i][2],
                                                     num_topics=10,
                                                     random_state=100,
@@ -170,27 +180,48 @@ def compute_lda_gensim():
             logger.debug(f"Elapsed time building the model ({model_name}): {time.time() - start_time} seconds")
 
             # Simple representation
-            lda_model.show_topics(num_topics=10, num_words=10, log=False, formatted=True)
+            model.show_topics(num_topics=10, num_words=10, log=False, formatted=True)
 
             # Compute Perplexity
-            logger.debug(f"Perplexity ({model_name}): {lda_model.log_perplexity(word_models[i][0])}")
+            if "tfidf" not in model_name:
+                logger.debug(f"Perplexity ({model_name}): {model.log_perplexity(word_models[i][0])}")
 
             # Compute Coherence Score
-            coherence_model_lda = CoherenceModel(model=lda_model, corpus=word_models[i][0], dictionary=word_models[i][2], coherence="u_mass")
-            coherence_lda = coherence_model_lda.get_coherence()
-            logger.debug(f"Coherence Score ({model_name}): {coherence_lda}")
+            coherence_model = CoherenceModel(model=model, corpus=word_models[i][0], dictionary=word_models[i][2], coherence="u_mass")
+            coherence = coherence_model.get_coherence()
+            logger.debug(f"Coherence Score ({model_name}): {coherence}")
+
+            coherence_for_file[model_name] = coherence
 
             # Output to HTML
-            vis = pyLDAvis.gensim_models.prepare(lda_model, word_models[i][0], word_models[i][2])
-            filename = file.split('.')[1].replace("/", "_").replace("\\", "_")
-            pyLDAvis.save_html(vis, f"./output/lda{filename}_{model_name}_gensim.html")
-            logger.debug(f"HTML out generated ({model_name})\n")
+            if "tfidf" not in model_name:
+                vis = pyLDAvis.gensim_models.prepare(model, word_models[i][0], word_models[i][2])
+                filename = file.split('.')[1].replace("/", "_").replace("\\", "_")
+                pyLDAvis.save_html(vis, f"./output/lda{filename}_{model_name}_gensim.html")
+                logger.debug(f"HTML out generated ({model_name})\n")
+
+        coherences.append(coherence_for_file)
+
+    print_coherences(coherences)
+
+
+def print_coherences(coherences):
+    filenames = ["all_subreddits", "all_subreddits_no_control", "control"]
+    for i, coherence_dict in enumerate(coherences):
+        coherence_values = list(coherence_dict.values())
+        model_names = list(coherence_dict.keys())
+        plt.bar(range(len(model_names)), coherence_values, tick_label=model_names)
+        plt.title(f"Input data: {filenames[i]}")
+        plt.xlabel("Model name")
+        plt.ylabel("Model coherence score (u_mass)")
+        plt.savefig(f"./output/coherence_bar_{filenames[i]}.png")
 
 
 def extract_topics(params):
     if "gensim" in params:
-        compute_lda_gensim()
+        compute_gensim()
     else:
         compute_lda_scikit()
 
-compute_lda_scikit()
+
+compute_gensim()
