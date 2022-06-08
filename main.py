@@ -14,9 +14,15 @@ def main(argv):
     if option == "-pre":
         subreddit_control = argv[1]
         if subreddit_control is None or subreddit_control == "":
-             logger_err.error("Arguments expected as: -pre <subreddit_control>")
+             logger_err.error("Arguments expected as: \n\t-pre <subreddit_control: string> <use spacy: True/False> <stem: True/False>")
         else:
-            preprocess_inputs()
+            args = argv[2:]
+            if len(args) < 2 or len(args) > 2:
+                logger_err.error("Arguments expected as: \n\t-pre <subreddit_control: string> <use spacy: True/False> <stem: True/False>")
+            try:
+                preprocess_inputs(subreddit_control, bool(args[0]), bool(args[1]))
+            except Exception:
+                logger_err.error("Arguments expected as: \n\t-pre <subreddit_control: string> <use spacy: True/False> <stem: True/False>")
         preprocess_inputs(subreddit_control)
     elif option == "-top":
         extract_topics()

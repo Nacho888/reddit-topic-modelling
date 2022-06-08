@@ -240,12 +240,8 @@ def print_coherences(coherences):
         plt.clf()
 
 
-def extract_topics(params):
-    if "gensim" in params:
-        compute_gensim()
-    else:
-        compute_lda_scikit()
+def extract_topics():
+    compute_gensim()
 
 
 compute_gensim()
-# compute_lda_scikit()
