@@ -100,6 +100,58 @@ def compute_lda_scikit():
             logger.debug(f"HTML out generated ({model_name})\n")
 
 
+def get_gensim_models(file: str):
+    # Load data from .txt file
+    data = []
+    with open(file, "r", encoding="utf-8") as f:
+        data = [row.rstrip("\n") for row in f]
+
+    # All sentences in one list: one document per entry
+    data = [doc.split(" ") for doc in data]
+
+    ############
+    # Unigrams #
+    ############
+
+    data_dict = corpora.Dictionary(data)
+    data_dict.filter_extremes(no_below=15, no_above=0.80, keep_n=1000)
+
+    # Bag of words
+    corpus_bow = [data_dict.doc2bow(doc) for doc in data]
+
+    # TF-IDF
+    tfidf = models.TfidfModel(corpus_bow)
+    corpus_tfidf = tfidf[corpus_bow]
+
+    ###########
+    # Bigrams #
+    ###########
+
+    bigram = Phrases(data)
+    bigram_phraser = Phraser(bigram)
+    bigram_token = []
+    for doc in data:
+        bigram_token.append(bigram_phraser[doc])
+
+    data_dict_bigrams = gensim.corpora.Dictionary(bigram_token)
+    data_dict_bigrams.filter_extremes(no_below=15, no_above=0.6, keep_n=1000)
+
+    # Bag of words
+    corpus_bigram = [data_dict_bigrams.doc2bow(doc) for doc in bigram_token]
+
+    # TF-IDF
+    tfidf_bigrams = models.TfidfModel(corpus_bigram)
+    corpus_tfidf_bigrams = tfidf_bigrams[corpus_bigram]
+
+    # Declaration of models
+    word_models = [[corpus_bigram, "bigram_bow", data_dict_bigrams],
+    [corpus_tfidf_bigrams, "bigram_tfidf", data_dict_bigrams],
+    [corpus_bow, "bow", data_dict],
+    [corpus_tfidf, "tfidf", data_dict]]
+
+    return word_models
+
+
 def compute_gensim():
     coherences = []
 
@@ -108,66 +160,20 @@ def compute_gensim():
 
         coherence_for_file = {}
 
-        # Load data from .txt file
-        data = []
-        with open(file, "r", encoding="utf-8") as f:
-            data = [row.rstrip("\n") for row in f]
-
-        # All sentences in one list: one document per entry
-        data = [doc.split(" ") for doc in data]
-
-        ############
-        # Unigrams #
-        ############
-
-        data_dict = corpora.Dictionary(data)
-        data_dict.filter_extremes(no_below=15, no_above=0.80, keep_n=1000)
-
-        # Bag of words
-        corpus_bow = [data_dict.doc2bow(doc) for doc in data]
-
-        # TF-IDF
-        tfidf = models.TfidfModel(corpus_bow)
-        corpus_tfidf = tfidf[corpus_bow]
-
-        ###########
-        # Bigrams #
-        ###########
-
-        bigram = Phrases(data)
-        bigram_phraser = Phraser(bigram)
-        bigram_token = []
-        for doc in data:
-            bigram_token.append(bigram_phraser[doc])
-
-        data_dict_bigrams = gensim.corpora.Dictionary(bigram_token)
-        data_dict_bigrams.filter_extremes(no_below=15, no_above=0.6, keep_n=1000)
-
-        # Bag of words
-        corpus_bigram = [data_dict_bigrams.doc2bow(doc) for doc in bigram_token]
-
-        # TF-IDF
-        tfidf_bigrams = models.TfidfModel(corpus_bigram)
-        corpus_tfidf_bigrams = tfidf_bigrams[corpus_bigram]
-
-        # Declaration of models
-        word_models = [[corpus_bigram, "bigram_bow", data_dict_bigrams],
-        [corpus_tfidf_bigrams, "bigram_tfidf", data_dict_bigrams],
-        [corpus_bow, "bow", data_dict],
-        [corpus_tfidf, "tfidf", data_dict]]
+        word_models = get_gensim_models(file)
 
         for i in range(len(word_models)):
-            # Get the name of the model
-            model_name = word_models[i][1]
+            # Get the name of the word model
+            word_model_name = word_models[i][1]
 
-            # Build LDA model
+            # Build topic model
             start_time = time.time()
 
-            if "tfidf" in model_name:
-                logger.debug(f"Computing LSI model for '{model_name}'")
+            if "tfidf" in word_model_name:
+                logger.debug(f"Computing LSI model for '{word_model_name}'")
                 model = gensim.models.lsimodel.LsiModel(corpus=word_models[i][0], id2word=word_models[i][2], num_topics=10)
             else:
-                logger.debug(f"Computing LDA model for '{model_name}'")
+                logger.debug(f"Computing LDA model for '{word_model_name}'")
                 model = gensim.models.ldamodel.LdaModel(corpus=word_models[i][0],
                                                     id2word=word_models[i][2],
                                                     num_topics=10,
@@ -177,35 +183,41 @@ def compute_gensim():
                                                     passes=5,
                                                     alpha="auto",
                                                     per_word_topics=True)
-            logger.debug(f"Elapsed time building the model ({model_name}): {time.time() - start_time} seconds")
+            logger.debug(f"Elapsed time building the model ({word_model_name}): {time.time() - start_time} seconds")
 
-            # Simple representation
-            logger.debug(model.show_topics(num_topics=10, num_words=10, log=False, formatted=True))
-
-            # Compute Perplexity
-            if "tfidf" not in model_name:
-                logger.debug(f"Perplexity ({model_name}): {model.log_perplexity(word_models[i][0])}")
-
-            # Compute Coherence Score
-            coherence_model = CoherenceModel(model=model, corpus=word_models[i][0], dictionary=word_models[i][2], coherence="u_mass")
-            coherence = coherence_model.get_coherence()
-            coherence_str = f"Coherence Score ({model_name}): {coherence}"
-            if "tfidf" not in model_name:
-                coherence_str += "\n"
-            logger.debug(coherence_str)
-
-            coherence_for_file[model_name] = coherence
-
-            # Output to HTML
-            if "tfidf" not in model_name:
-                vis = pyLDAvis.gensim_models.prepare(model, word_models[i][0], word_models[i][2])
-                filename = file.split('.')[1].replace("/", "_").replace("\\", "_")
-                pyLDAvis.save_html(vis, f"./output/lda{filename}_{model_name}_gensim.html")
-                logger.debug(f"HTML out generated ({model_name})\n")
+            coherence_for_file = get_gensim_model_stats(model, word_models, word_model_name, i, coherence_for_file)
 
         coherences.append(coherence_for_file)
 
     print_coherences(coherences)
+
+
+def get_gensim_model_stats(model, word_models, word_model_name, file, i, coherence_for_file):
+    # Simple representation
+    logger.debug(model.show_topics(num_topics=10, num_words=10, log=False, formatted=True))
+
+    # Compute Perplexity
+    if "tfidf" not in word_model_name:
+        logger.debug(f"Perplexity ({word_model_name}): {model.log_perplexity(word_models[i][0])}")
+
+    # Compute Coherence Score
+    coherence_model = CoherenceModel(model=model, corpus=word_models[i][0], dictionary=word_models[i][2], coherence="u_mass")
+    coherence = coherence_model.get_coherence()
+    coherence_str = f"Coherence Score ({word_model_name}): {coherence}"
+    if "tfidf" not in word_model_name:
+        coherence_str += "\n"
+    logger.debug(coherence_str)
+
+    coherence_for_file[word_model_name] = coherence
+
+    # Output to HTML
+    if "tfidf" not in word_model_name:
+        vis = pyLDAvis.gensim_models.prepare(model, word_models[i][0], word_models[i][2])
+        filename = file.split('.')[1].replace("/", "_").replace("\\", "_")
+        pyLDAvis.save_html(vis, f"./output/lda{filename}_{word_model_name}_gensim.html")
+        logger.debug(f"HTML out generated ({word_model_name})\n")
+
+    return coherence_for_file
 
 
 def print_coherences(coherences):
