@@ -91,7 +91,7 @@ def compute_gensim(preprocessed_as):
                 logger.debug(f"Computing LSI model for '{word_model_name}'")
                 model = gensim.models.lsimodel.LsiModel(corpus=word_models[i][0], id2word=word_models[i][2], num_topics=10)
                 logger.debug(f"Elapsed time building the model ({word_model_name}): {time.time() - start_time} seconds")
-                coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_lsi'}", i, coherence_for_file)
+                coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_lsi'}", i, coherence_for_file, preprocessed_as)
             else: # LDA and HDP with Bag of Words
                 logger.debug(f"Computing LDA model for '{word_model_name}'")
                 model = gensim.models.ldamodel.LdaModel(corpus=word_models[i][0],
@@ -104,20 +104,20 @@ def compute_gensim(preprocessed_as):
                                                     alpha="auto",
                                                     per_word_topics=True)
             logger.debug(f"Elapsed time building the model ({word_model_name + '_lda'}): {time.time() - start_time} seconds")
-            coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_lda'}", i, coherence_for_file)
+            coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_lda'}", i, coherence_for_file, preprocessed_as)
 
             logger.debug(f"Computing HDP model for '{word_model_name}'")
             model = gensim.models.hdpmodel.HdpModel(corpus=word_models[i][0], id2word=word_models[i][2])
             model = model.suggested_lda_model()
             logger.debug(f"Elapsed time building the model ({word_model_name + '_hdp'}): {time.time() - start_time} seconds")
-            coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_hdp'}", i, coherence_for_file)
+            coherence_for_file = get_gensim_model_stats(model, word_models, f"{word_model_name + '_hdp'}", i, coherence_for_file, preprocessed_as)
 
         coherences.append(coherence_for_file)
 
-    print_coherences(coherences)
+    print_coherences(coherences, preprocessed_as)
 
 
-def get_gensim_model_stats(model, word_models, word_model_name, file, i, coherence_for_file):
+def get_gensim_model_stats(model, word_models, word_model_name, file, i, coherence_for_file, preprocessed_as):
     # Simple representation
     logger.debug(model.show_topics(num_topics=10, num_words=10, log=False, formatted=True))
 
@@ -139,13 +139,13 @@ def get_gensim_model_stats(model, word_models, word_model_name, file, i, coheren
     if "lsi" not in word_model_name:
         vis = pyLDAvis.gensim_models.prepare(model, word_models[i][0], word_models[i][2])
         filename = file.split('.')[1].replace("/", "_").replace("\\", "_")
-        pyLDAvis.save_html(vis, f"./output/lda{filename}_{word_model_name}_gensim.html")
+        pyLDAvis.save_html(vis, f"./output/{preprocessed_as}/lda{filename}_{word_model_name}_gensim.html")
         logger.debug(f"HTML out generated ({word_model_name})\n")
 
     return coherence_for_file
 
 
-def print_coherences(coherences):
+def print_coherences(coherences, preprocessed_as):
     filenames = ["all_subreddits", "all_subreddits_no_control", "control"]
     for i, coherence_dict in enumerate(coherences):
         coherence_values = list(coherence_dict.values())
@@ -154,7 +154,7 @@ def print_coherences(coherences):
         plt.title(f"Input data: {filenames[i]}")
         plt.xlabel("Model name")
         plt.ylabel("Model coherence score (u_mass)")
-        plt.savefig(f"./output/coherence_bar_{filenames[i]}.png")
+        plt.savefig(f"./output/{preprocessed_as}/coherence_bar_{filenames[i]}.png")
         plt.clf()
 
 

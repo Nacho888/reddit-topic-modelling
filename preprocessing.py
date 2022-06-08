@@ -131,5 +131,3 @@ def preprocess_inputs(subreddit_control: str, only_text: bool = True, spacy: boo
     full_no_control_df.to_csv(f"./data/{path}all_subreddits_no_control.txt", header=None, index=None, sep="\n", mode="w")
     control_df.to_csv(f"./data/{path}control.txt", header=None, index=None, sep="\n", mode="w")
 
-
-preprocess_inputs("ImmigrationCanada", True, True, True)

@@ -2,7 +2,3 @@
 *
 # Except this file
 !.gitignore
-!/base
-!/base_stem
-!/spacy
-!/spacy_stem
