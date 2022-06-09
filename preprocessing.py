@@ -48,7 +48,7 @@ def pre_process(text: str, spacy: bool = True, stem: bool = False):
     """
 
     # Lowercase, removers, convert unicode symbols and normalize whitespaces
-    processed = cleantext.clean(text, lower=True, fix_unicode=True, no_punct=True, no_urls=True, no_emails=True, no_phone_numbers=True, normalize_whitespace=True, no_line_breaks=True, no_digits=True, no_numbers=True, no_emoji=True, replace_with_number="", replace_with_digit="")
+    processed = cleantext.clean(text, lower=True, fix_unicode=True, no_punct=True, no_urls=True, no_emails=True, no_phone_numbers=True, normalize_whitespace=True, no_line_breaks=True, no_digits=True, no_numbers=True, no_emoji=True, replace_with_number="", replace_with_digit="", replace_with_url="", replace_with_phone_number="", replace_with_email="", replace_with_currency_symbol="")
 
     # Remove stopwords
     processed = pattern.sub('', processed)

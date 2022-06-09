@@ -172,8 +172,3 @@ def print_coherences(coherences, preprocessed_as, files):
 
 def extract_topics(preprocessed_as):
     compute_gensim(preprocessed_as)
-
-compute_gensim("base")
-# compute_gensim("base_stem")
-# compute_gensim("spacy")s
-# compute_gensim("spacy_stem")
